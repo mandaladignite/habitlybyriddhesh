@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import connectDB from '@/lib/mongodb'
+import { connectDB } from '@/lib/mongodb'
 import HabitEntry from '@/models/HabitEntry'
 import { startOfMonth, endOfMonth, eachDayOfInterval, format } from 'date-fns'
 

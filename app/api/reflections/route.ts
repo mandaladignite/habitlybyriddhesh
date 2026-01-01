@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import connectDB from '@/lib/mongodb'
+import { connectDB } from '@/lib/mongodb'
 import MonthlyReflection from '@/models/MonthlyReflection'
 
 export async function GET(request: Request) {

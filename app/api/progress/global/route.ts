@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { connectDB } from '@/lib/mongodb'
 import Habit from '@/models/Habit'
 import HabitEntry from '@/models/HabitEntry'
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay, endOfDay } from 'date-fns'
@@ -11,6 +12,8 @@ export async function GET(request: NextRequest) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    await connectDB()
 
     const now = new Date()
     const todayStart = startOfDay(now)
