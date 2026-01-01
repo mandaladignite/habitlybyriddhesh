@@ -95,7 +95,7 @@ export function TrackerContent() {
     fetchHabits()
     fetchReflection()
     fetchAnalytics()
-  }, [selectedMonth, fetchHabits, fetchReflection, fetchAnalytics])
+  }, [selectedMonth]) // Only depend on selectedMonth, not the fetch functions
 
   const handleToggleEntry = useCallback(async (habitId: string, date: Date) => {
     // Prevent multiple simultaneous toggles
@@ -105,9 +105,11 @@ export function TrackerContent() {
     setTogglingEntry(toggleKey)
     
     try {
-      const completed = !habits
+      const currentEntry = habits
         .find((h) => h.id === habitId)
-        ?.entries.find((e) => format(e.date, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd'))?.completed
+        ?.entries.find((e) => format(e.date, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd'))
+      
+      const completed = !currentEntry?.completed
 
       const res = await fetch('/api/entries', {
         method: 'POST',
@@ -120,27 +122,40 @@ export function TrackerContent() {
       })
 
       if (res.ok) {
-        // Optimistically update UI first
+        const result = await res.json()
+        
+        // Optimistically update UI
         setHabits(prevHabits => 
           prevHabits.map(habit => {
             if (habit.id === habitId) {
-              const existingEntry = habit.entries.find(e => 
-                format(e.date, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
-              )
-              
-              if (existingEntry) {
-                return {
-                  ...habit,
-                  entries: habit.entries.map(e => 
-                    format(e.date, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
-                      ? { ...e, completed }
-                      : e
-                  )
+              if (completed) {
+                // If checking, add or update the entry
+                const existingEntry = habit.entries.find(e => 
+                  format(e.date, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
+                )
+                
+                if (existingEntry) {
+                  return {
+                    ...habit,
+                    entries: habit.entries.map(e => 
+                      format(e.date, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
+                        ? { ...e, completed }
+                        : e
+                    )
+                  }
+                } else {
+                  return {
+                    ...habit,
+                    entries: [...habit.entries, { date, completed }]
+                  }
                 }
               } else {
+                // If unchecking, remove the entry entirely
                 return {
                   ...habit,
-                  entries: [...habit.entries, { date, completed }]
+                  entries: habit.entries.filter(e => 
+                    format(e.date, 'yyyy-MM-dd') !== format(date, 'yyyy-MM-dd')
+                  )
                 }
               }
             }
@@ -148,16 +163,20 @@ export function TrackerContent() {
           })
         )
         
-        // Then fetch fresh data
-        fetchHabits()
+        // Only fetch analytics, not habits (to preserve optimistic update)
         fetchAnalytics()
+      } else {
+        // If API call failed, refresh habits to get correct state
+        fetchHabits()
       }
     } catch (error) {
       console.error('Error toggling entry:', error)
+      // On error, refresh habits to get correct state
+      fetchHabits()
     } finally {
       setTogglingEntry(null)
     }
-  }, [habits, togglingEntry, fetchHabits, fetchAnalytics])
+  }, [habits, togglingEntry, fetchAnalytics])
 
   const handleAddHabit = async (name: string, emoji: string, targetTime?: string, weeklyTarget?: number, monthlyTarget?: number) => {
     try {

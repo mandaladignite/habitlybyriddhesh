@@ -38,30 +38,47 @@ export async function POST(request: Request) {
     const entryDate = new Date(date)
     entryDate.setHours(0, 0, 0, 0)
 
-    const entry = await HabitEntry.findOneAndUpdate(
-      {
+    if (completed === false) {
+      // If unchecking, delete the entry entirely
+      const deletedEntry = await HabitEntry.findOneAndDelete({
         habitId,
         userId: session.user.id,
         date: entryDate,
-      },
-      {
-        habitId,
-        userId: session.user.id,
-        date: entryDate,
-        completed: completed ?? true,
-        notes,
-        value,
-      },
-      {
-        upsert: true,
-        new: true,
-      }
-    )
+      })
 
-    return NextResponse.json({
-      ...entry.toObject(),
-      id: entry._id.toString(),
-    })
+      return NextResponse.json({
+        success: true,
+        deleted: true,
+        message: deletedEntry ? 'Entry deleted successfully' : 'No entry found to delete'
+      })
+    } else {
+      // If checking, create or update the entry
+      const entry = await HabitEntry.findOneAndUpdate(
+        {
+          habitId,
+          userId: session.user.id,
+          date: entryDate,
+        },
+        {
+          habitId,
+          userId: session.user.id,
+          date: entryDate,
+          completed: true,
+          notes,
+          value,
+        },
+        {
+          upsert: true,
+          new: true,
+        }
+      )
+
+      return NextResponse.json({
+        ...entry.toObject(),
+        id: entry._id.toString(),
+        deleted: false,
+      })
+    }
   } catch (error) {
     console.error('Error updating entry:', error)
     return NextResponse.json(
