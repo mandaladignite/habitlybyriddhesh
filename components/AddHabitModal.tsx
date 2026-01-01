@@ -9,19 +9,25 @@ const EMOJIS = ['✨', '🏃', '📚', '💧', '🧘', '🍎', '💤', '🎯', '
 interface AddHabitModalProps {
   isOpen: boolean
   onClose: () => void
-  onAdd: (name: string, emoji: string) => void
+  onAdd: (name: string, emoji: string, targetTime?: string, weeklyTarget?: number, monthlyTarget?: number) => void
 }
 
 export function AddHabitModal({ isOpen, onClose, onAdd }: AddHabitModalProps) {
   const [name, setName] = useState('')
   const [selectedEmoji, setSelectedEmoji] = useState('✨')
+  const [targetTime, setTargetTime] = useState('')
+  const [weeklyTarget, setWeeklyTarget] = useState(7)
+  const [monthlyTarget, setMonthlyTarget] = useState(30)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (name.trim()) {
-      onAdd(name.trim(), selectedEmoji)
+      onAdd(name.trim(), selectedEmoji, targetTime || undefined, weeklyTarget, monthlyTarget)
       setName('')
       setSelectedEmoji('✨')
+      setTargetTime('')
+      setWeeklyTarget(7)
+      setMonthlyTarget(30)
       onClose()
     }
   }
@@ -64,10 +70,58 @@ export function AddHabitModal({ isOpen, onClose, onAdd }: AddHabitModalProps) {
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g., Drink water, Exercise..."
+                    placeholder="e.g., Wake up at 4:30AM, Drink water..."
                     className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-800 placeholder-slate-400"
                     autoFocus
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Target Time (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={targetTime}
+                    onChange={(e) => setTargetTime(e.target.value)}
+                    placeholder="e.g., 4:30AM, 9:00PM"
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-800 placeholder-slate-400"
+                  />
+                  <p className="mt-1 text-xs text-slate-500">
+                    For time-specific habits like &quot;Wake up at 4:30AM&quot;
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">
+                      Weekly Target
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="7"
+                      value={weeklyTarget}
+                      onChange={(e) => setWeeklyTarget(parseInt(e.target.value) || 7)}
+                      className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-800"
+                    />
+                    <p className="mt-1 text-xs text-slate-500">Days per week</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">
+                      Monthly Target
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="31"
+                      value={monthlyTarget}
+                      onChange={(e) => setMonthlyTarget(parseInt(e.target.value) || 30)}
+                      className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-800"
+                    />
+                    <p className="mt-1 text-xs text-slate-500">Days per month</p>
+                  </div>
                 </div>
 
                 <div>

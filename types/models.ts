@@ -17,6 +17,11 @@ export interface IHabit extends Document<Types.ObjectId> {
   emoji: string
   color?: string
   frequency: string
+  targetTime?: string // For time-specific habits like "4:30AM"
+  targetValue?: number // Target value for quantitative habits
+  unit?: string // Unit for target values (e.g., "minutes", "hours", "km")
+  weeklyTarget?: number // Target completions per week
+  monthlyTarget?: number // Target completions per month
   userId: string
   archived: boolean
   createdAt: Date

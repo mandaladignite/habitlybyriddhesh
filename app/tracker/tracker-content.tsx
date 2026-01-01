@@ -8,6 +8,11 @@ import { ThemeSwitcher } from '@/components/ThemeSwitcher'
 import { ExportButton } from '@/components/ExportButton'
 import { ProgressBar } from '@/components/ProgressBar'
 import { PerformanceChart } from '@/components/PerformanceChart'
+import WeeklyProgress from '@/components/WeeklyProgress'
+import MonthlyOverview from '@/components/MonthlyOverview'
+import GlobalProgress from '@/components/GlobalProgress'
+import { ExcelGrid } from '@/components/ExcelGrid'
+import { CalendarSettings } from '@/components/CalendarSettings'
 import { useAppStore } from '@/lib/store'
 import { ChevronLeft, ChevronRight, Plus, TrendingUp, Calendar } from 'lucide-react'
 import { formatMonthYear, getStartOfMonth } from '@/lib/utils'
@@ -32,12 +37,7 @@ export function TrackerContent() {
   const [reflection, setReflection] = useState('')
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-
-  useEffect(() => {
-    fetchHabits()
-    fetchReflection()
-    fetchAnalytics()
-  }, [selectedMonth])
+  const [viewMode, setViewMode] = useState<'default' | 'excel'>('excel') // Default to Excel view
 
   const fetchHabits = async () => {
     try {
@@ -86,6 +86,12 @@ export function TrackerContent() {
     }
   }
 
+  useEffect(() => {
+    fetchHabits()
+    fetchReflection()
+    fetchAnalytics()
+  }, [selectedMonth])
+
   const handleToggleEntry = async (habitId: string, date: Date) => {
     try {
       const completed = !habits
@@ -111,12 +117,18 @@ export function TrackerContent() {
     }
   }
 
-  const handleAddHabit = async (name: string, emoji: string) => {
+  const handleAddHabit = async (name: string, emoji: string, targetTime?: string, weeklyTarget?: number, monthlyTarget?: number) => {
     try {
       const res = await fetch('/api/habits', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, emoji }),
+        body: JSON.stringify({ 
+          name, 
+          emoji, 
+          targetTime, 
+          weeklyTarget: weeklyTarget || 7, 
+          monthlyTarget: monthlyTarget || 30 
+        }),
       })
 
       if (res.ok) {
@@ -214,6 +226,28 @@ export function TrackerContent() {
 
             <div className="flex flex-wrap items-center gap-3">
               <ThemeSwitcher />
+              <div className="flex items-center bg-muted rounded-lg p-1">
+                <button
+                  onClick={() => setViewMode('excel')}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
+                    viewMode === 'excel' 
+                      ? 'bg-primary text-primary-foreground' 
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Excel View
+                </button>
+                <button
+                  onClick={() => setViewMode('default')}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
+                    viewMode === 'default' 
+                      ? 'bg-primary text-primary-foreground' 
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Default View
+                </button>
+              </div>
               <ExportButton elementId="habit-tracker-export" filename="habit-tracker" />
               <button
                 onClick={() => setIsAddHabitModalOpen(true)}
@@ -242,6 +276,42 @@ export function TrackerContent() {
           </div>
         </motion.div>
 
+        {/* Excel-inspired Overview Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <MonthlyOverview />
+          <WeeklyProgress />
+        </div>
+
+        {/* Calendar Settings */}
+        <CalendarSettings
+          selectedYear={selectedMonth.getFullYear()}
+          selectedMonth={selectedMonth.getMonth() + 1}
+          onYearChange={(year) => setSelectedMonth(new Date(year, selectedMonth.getMonth()))}
+          onMonthChange={(month) => setSelectedMonth(new Date(selectedMonth.getFullYear(), month - 1))}
+        />
+
+        {/* Global Progress */}
+        <GlobalProgress />
+
+        {/* Habit Grid - Excel or Default View */}
+        <div id="habit-tracker-export" className="mb-6">
+          {viewMode === 'excel' ? (
+            <ExcelGrid
+              habits={habits}
+              selectedMonth={selectedMonth}
+              onToggleEntry={handleToggleEntry}
+              onDeleteHabit={handleDeleteHabit}
+            />
+          ) : (
+            <HabitGrid
+              habits={habits}
+              selectedMonth={selectedMonth}
+              onToggleEntry={handleToggleEntry}
+              onDeleteHabit={handleDeleteHabit}
+            />
+          )}
+        </div>
+
         {/* Performance Chart */}
         {analytics && analytics.daily.length > 0 && (
           <motion.div
@@ -265,39 +335,7 @@ export function TrackerContent() {
           </motion.div>
         )}
 
-        {/* Habit Grid */}
-        <div id="habit-tracker-export">
-          <HabitGrid
-            habits={habits}
-            selectedMonth={selectedMonth}
-            onToggleEntry={handleToggleEntry}
-            onDeleteHabit={handleDeleteHabit}
-          />
-        </div>
-
-        {/* Weekly Summary */}
-        {analytics && analytics.weekly.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="mt-6 bg-white rounded-2xl shadow-lg border border-slate-200 p-5 sm:p-6"
-          >
-            <h3 className="text-lg sm:text-xl font-bold text-slate-800 mb-4">
-              Weekly Summary
-            </h3>
-            <div className="space-y-4">
-              {analytics.weekly.map((week) => (
-                <div key={week.week}>
-                  <ProgressBar
-                    percentage={week.percentage}
-                    label={`Week ${week.week} (${week.completed}/${week.total} completed)`}
-                  />
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        )}
+        
 
         {/* Reflection Section */}
         <motion.div

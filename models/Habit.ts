@@ -7,6 +7,11 @@ const HabitSchema = new Schema<IHabit>(
     emoji: { type: String, default: '✨' },
     color: { type: String },
     frequency: { type: String, default: 'daily' },
+    targetTime: { type: String }, // For time-specific habits like "4:30AM"
+    targetValue: { type: Number }, // Target value for quantitative habits
+    unit: { type: String }, // Unit for target values (e.g., "minutes", "hours", "km")
+    weeklyTarget: { type: Number, default: 7 }, // Target completions per week
+    monthlyTarget: { type: Number, default: 30 }, // Target completions per month
     userId: { type: String, required: true, index: true },
     archived: { type: Boolean, default: false },
   },

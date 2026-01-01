@@ -76,7 +76,7 @@ export async function POST(request: Request) {
 
     await connectDB()
 
-    const { name, emoji, color, frequency } = await request.json()
+    const { name, emoji, color, frequency, targetTime, weeklyTarget, monthlyTarget } = await request.json()
 
     if (!name) {
       return NextResponse.json(
@@ -90,6 +90,9 @@ export async function POST(request: Request) {
       emoji: emoji || '✨',
       color,
       frequency: frequency || 'daily',
+      targetTime,
+      weeklyTarget: weeklyTarget || 7,
+      monthlyTarget: monthlyTarget || 30,
       userId: session.user.id,
     })
 
