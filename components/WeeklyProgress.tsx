@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { format, startOfWeek, addWeeks, subWeeks } from 'date-fns'
+import { format, startOfWeek, addWeeks, subWeeks, endOfWeek } from 'date-fns'
 
 interface WeeklyProgressData {
   habitId: string
@@ -84,8 +84,8 @@ export default function WeeklyProgress() {
           >
             ←
           </button>
-          <span className="text-sm text-muted-foreground min-w-[120px] text-center">
-            {format(currentWeekStart, 'MMM d')} - {format(addWeeks(currentWeekStart, 1).setDate(0), 'MMM d')}
+          <span className="text-sm text-muted-foreground min-w-[140px] text-center">
+            {format(currentWeekStart, 'MMM d, yyyy')} - {format(endOfWeek(currentWeekStart, { weekStartsOn: 1 }), 'MMM d, yyyy')}
           </span>
           <button
             onClick={() => navigateWeek('next')}

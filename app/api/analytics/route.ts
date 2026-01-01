@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { connectDB } from '@/lib/mongodb'
 import HabitEntry from '@/models/HabitEntry'
+import Habit from '@/models/Habit'
 import { startOfMonth, endOfMonth, eachDayOfInterval, format } from 'date-fns'
 
 export async function GET(request: Request) {
@@ -20,6 +21,12 @@ export async function GET(request: Request) {
 
     const startDate = startOfMonth(new Date(year, month - 1, 1))
     const endDate = endOfMonth(new Date(year, month - 1, 1))
+
+    // Get user's active habits for the month
+    const habits = await Habit.find({ 
+      userId: session.user.id, 
+      archived: false 
+    }).lean()
 
     const entries = await HabitEntry.find({
       userId: session.user.id,
@@ -39,7 +46,7 @@ export async function GET(request: Request) {
       })
       
       const completed = dayEntries.filter((e: any) => e.completed).length
-      const total = dayEntries.length
+      const total = habits.length // Total number of active habits, not just entries that exist
 
       return {
         date: format(day, 'yyyy-MM-dd'),
@@ -58,7 +65,7 @@ export async function GET(request: Request) {
 
       const weekData = dailyData.slice(weekStart, weekEnd + 1)
       const completed = weekData.reduce((sum, day) => sum + day.completed, 0)
-      const total = weekData.reduce((sum, day) => sum + day.total, 0)
+      const total = habits.length * weekData.length // Total possible completions for the week
 
       weeks.push({
         week: week + 1,
