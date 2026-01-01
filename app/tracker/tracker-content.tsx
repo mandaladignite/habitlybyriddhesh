@@ -48,7 +48,15 @@ export function TrackerContent() {
     try {
       const month = selectedMonth.getMonth() + 1
       const year = selectedMonth.getFullYear()
+      
       const res = await fetch(`/api/habits?archived=false&month=${month}&year=${year}`)
+      
+      if (!res.ok) {
+        console.error('Failed to fetch habits:', res.status, res.statusText)
+        setHabits([])
+        return
+      }
+      
       const data = await res.json()
       
       const habitsWithEntries = data.map((habit: Habit & { entries: any[] }) => ({
@@ -62,6 +70,7 @@ export function TrackerContent() {
       setHabits(habitsWithEntries)
     } catch (error) {
       console.error('Error fetching habits:', error)
+      setHabits([])
     } finally {
       setIsLoading(false)
     }
@@ -71,11 +80,20 @@ export function TrackerContent() {
     try {
       const month = selectedMonth.getMonth() + 1
       const year = selectedMonth.getFullYear()
+      
       const res = await fetch(`/api/analytics?month=${month}&year=${year}`)
+      
+      if (!res.ok) {
+        console.error('Failed to fetch analytics:', res.status, res.statusText)
+        setAnalytics(null)
+        return
+      }
+      
       const data = await res.json()
       setAnalytics(data)
     } catch (error) {
       console.error('Error fetching analytics:', error)
+      setAnalytics(null)
     }
   }, [selectedMonth])
 
@@ -84,10 +102,18 @@ export function TrackerContent() {
       const res = await fetch(
         `/api/reflections?year=${selectedMonth.getFullYear()}&month=${selectedMonth.getMonth() + 1}`
       )
+      
+      if (!res.ok) {
+        console.error('Failed to fetch reflection:', res.status, res.statusText)
+        setReflection('')
+        return
+      }
+      
       const data = await res.json()
       setReflection(data.content || '')
     } catch (error) {
       console.error('Error fetching reflection:', error)
+      setReflection('')
     }
   }, [selectedMonth])
 

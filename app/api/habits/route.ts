@@ -29,8 +29,9 @@ export async function GET(request: Request) {
     // If month/year specified, fetch entries for that period
     if (month && year) {
       const startDate = new Date(parseInt(year), parseInt(month) - 1, 1)
-      const endDate = new Date(parseInt(year), parseInt(month), 0)
-      endDate.setHours(23, 59, 59, 999)
+      // Get last day of the current month
+      const lastDayOfMonth = new Date(parseInt(year), parseInt(month), 0).getDate()
+      const endDate = new Date(parseInt(year), parseInt(month) - 1, lastDayOfMonth, 23, 59, 59, 999)
 
       const entries = await HabitEntry.find({
         userId: session.user.id,
