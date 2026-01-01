@@ -3,12 +3,15 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { format, isToday, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns'
+import { Edit, Trash2 } from 'lucide-react'
 
 interface Habit {
   id: string
   name: string
   emoji: string
   targetTime?: string
+  weeklyTarget?: number
+  monthlyTarget?: number
   entries: { date: Date; completed: boolean }[]
 }
 
@@ -17,9 +20,11 @@ interface ExcelGridProps {
   selectedMonth: Date
   onToggleEntry: (habitId: string, date: Date) => void
   onDeleteHabit: (habitId: string) => void
+  onEditHabit: (habit: Habit) => void
+  togglingEntry?: string | null
 }
 
-export function ExcelGrid({ habits, selectedMonth, onToggleEntry, onDeleteHabit }: ExcelGridProps) {
+export function ExcelGrid({ habits, selectedMonth, onToggleEntry, onDeleteHabit, onEditHabit, togglingEntry }: ExcelGridProps) {
   const monthStart = startOfMonth(selectedMonth)
   const monthEnd = endOfMonth(selectedMonth)
   const days = eachDayOfInterval({ start: monthStart, end: monthEnd })
@@ -86,13 +91,31 @@ export function ExcelGrid({ habits, selectedMonth, onToggleEntry, onDeleteHabit 
               >
                 {/* Habit name cell */}
                 <td className="sticky left-0 bg-card p-3 border-r border-border">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">{habit.emoji}</span>
-                    <div>
-                      <div className="font-medium text-foreground text-sm">{habit.name}</div>
-                      {habit.targetTime && (
-                        <div className="text-xs text-muted-foreground">{habit.targetTime}</div>
-                      )}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">{habit.emoji}</span>
+                      <div>
+                        <div className="font-medium text-foreground text-sm">{habit.name}</div>
+                        {habit.targetTime && (
+                          <div className="text-xs text-muted-foreground">{habit.targetTime}</div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => onEditHabit && onEditHabit(habit)}
+                        className="p-1 hover:bg-muted rounded transition-colors"
+                        title="Edit habit"
+                      >
+                        <Edit size={12} className="text-muted-foreground" />
+                      </button>
+                      <button
+                        onClick={() => onDeleteHabit && onDeleteHabit(habit.id)}
+                        className="p-1 hover:bg-muted rounded transition-colors"
+                        title="Delete habit"
+                      >
+                        <Trash2 size={12} className="text-destructive" />
+                      </button>
                     </div>
                   </div>
                 </td>
@@ -101,6 +124,8 @@ export function ExcelGrid({ habits, selectedMonth, onToggleEntry, onDeleteHabit 
                 {days.map((day) => {
                   const isCompleted = getCompletionStatus(habit, day)
                   const isTodayCell = isToday(day)
+                  const toggleKey = `${habit.id}-${format(day, 'yyyy-MM-dd')}`
+                  const isToggling = togglingEntry === toggleKey
                   
                   return (
                     <td 
@@ -110,16 +135,19 @@ export function ExcelGrid({ habits, selectedMonth, onToggleEntry, onDeleteHabit 
                       }`}
                     >
                       <button
-                        onClick={() => onToggleEntry(habit.id, day)}
+                        onClick={() => !isToggling && onToggleEntry(habit.id, day)}
+                        disabled={isToggling}
                         className={`w-8 h-8 rounded-md border-2 transition-all text-xs font-medium ${
                           isCompleted
                             ? 'bg-green-500 border-green-600 text-white hover:bg-green-600'
                             : isTodayCell
                             ? 'border-amber-400 hover:bg-amber-100 text-amber-700'
                             : 'border-border hover:bg-muted/50 text-muted-foreground'
-                        }`}
+                        } ${isToggling ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
-                        {isCompleted ? '✓' : ''}
+                        {isToggling ? (
+                          <div className="w-3 h-3 border border-current border-t-transparent animate-spin"></div>
+                        ) : isCompleted ? '✓' : ''}
                       </button>
                     </td>
                   )

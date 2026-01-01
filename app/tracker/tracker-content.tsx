@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Navbar } from '@/components/Navbar'
 import { HabitGrid } from '@/components/HabitGrid'
 import { AddHabitModal } from '@/components/AddHabitModal'
@@ -23,6 +23,9 @@ interface Habit {
   id: string
   name: string
   emoji: string
+  targetTime?: string
+  weeklyTarget?: number
+  monthlyTarget?: number
   entries: { date: Date; completed: boolean }[]
 }
 
@@ -38,8 +41,10 @@ export function TrackerContent() {
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [viewMode, setViewMode] = useState<'default' | 'excel'>('excel') // Default to Excel view
+  const [editingHabit, setEditingHabit] = useState<Habit | null>(null)
+  const [togglingEntry, setTogglingEntry] = useState<string | null>(null) // Prevent double-clicks
 
-  const fetchHabits = async () => {
+  const fetchHabits = useCallback(async () => {
     try {
       const month = selectedMonth.getMonth() + 1
       const year = selectedMonth.getFullYear()
@@ -60,9 +65,9 @@ export function TrackerContent() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [selectedMonth])
 
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     try {
       const month = selectedMonth.getMonth() + 1
       const year = selectedMonth.getFullYear()
@@ -72,9 +77,9 @@ export function TrackerContent() {
     } catch (error) {
       console.error('Error fetching analytics:', error)
     }
-  }
+  }, [selectedMonth])
 
-  const fetchReflection = async () => {
+  const fetchReflection = useCallback(async () => {
     try {
       const res = await fetch(
         `/api/reflections?year=${selectedMonth.getFullYear()}&month=${selectedMonth.getMonth() + 1}`
@@ -84,15 +89,21 @@ export function TrackerContent() {
     } catch (error) {
       console.error('Error fetching reflection:', error)
     }
-  }
+  }, [selectedMonth])
 
   useEffect(() => {
     fetchHabits()
     fetchReflection()
     fetchAnalytics()
-  }, [selectedMonth])
+  }, [selectedMonth, fetchHabits, fetchReflection, fetchAnalytics])
 
-  const handleToggleEntry = async (habitId: string, date: Date) => {
+  const handleToggleEntry = useCallback(async (habitId: string, date: Date) => {
+    // Prevent multiple simultaneous toggles
+    const toggleKey = `${habitId}-${format(date, 'yyyy-MM-dd')}`
+    if (togglingEntry === toggleKey) return
+    
+    setTogglingEntry(toggleKey)
+    
     try {
       const completed = !habits
         .find((h) => h.id === habitId)
@@ -109,13 +120,44 @@ export function TrackerContent() {
       })
 
       if (res.ok) {
+        // Optimistically update UI first
+        setHabits(prevHabits => 
+          prevHabits.map(habit => {
+            if (habit.id === habitId) {
+              const existingEntry = habit.entries.find(e => 
+                format(e.date, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
+              )
+              
+              if (existingEntry) {
+                return {
+                  ...habit,
+                  entries: habit.entries.map(e => 
+                    format(e.date, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
+                      ? { ...e, completed }
+                      : e
+                  )
+                }
+              } else {
+                return {
+                  ...habit,
+                  entries: [...habit.entries, { date, completed }]
+                }
+              }
+            }
+            return habit
+          })
+        )
+        
+        // Then fetch fresh data
         fetchHabits()
         fetchAnalytics()
       }
     } catch (error) {
       console.error('Error toggling entry:', error)
+    } finally {
+      setTogglingEntry(null)
     }
-  }
+  }, [habits, togglingEntry, fetchHabits, fetchAnalytics])
 
   const handleAddHabit = async (name: string, emoji: string, targetTime?: string, weeklyTarget?: number, monthlyTarget?: number) => {
     try {
@@ -138,6 +180,37 @@ export function TrackerContent() {
     } catch (error) {
       console.error('Error adding habit:', error)
     }
+  }
+
+  const handleEditHabit = async (id: string, name: string, emoji: string, targetTime?: string, weeklyTarget?: number, monthlyTarget?: number) => {
+    try {
+      const res = await fetch('/api/habits', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          id, 
+          name, 
+          emoji, 
+          targetTime, 
+          weeklyTarget: weeklyTarget || 7, 
+          monthlyTarget: monthlyTarget || 30 
+        }),
+      })
+
+      if (res.ok) {
+        fetchHabits()
+        fetchAnalytics()
+        setEditingHabit(null)
+        setIsAddHabitModalOpen(false)
+      }
+    } catch (error) {
+      console.error('Error editing habit:', error)
+    }
+  }
+
+  const handleStartEdit = (habit: Habit) => {
+    setEditingHabit(habit)
+    setIsAddHabitModalOpen(true)
   }
 
   const handleDeleteHabit = async (habitId: string) => {
@@ -301,6 +374,8 @@ export function TrackerContent() {
               selectedMonth={selectedMonth}
               onToggleEntry={handleToggleEntry}
               onDeleteHabit={handleDeleteHabit}
+              onEditHabit={handleStartEdit}
+              togglingEntry={togglingEntry}
             />
           ) : (
             <HabitGrid
@@ -308,6 +383,7 @@ export function TrackerContent() {
               selectedMonth={selectedMonth}
               onToggleEntry={handleToggleEntry}
               onDeleteHabit={handleDeleteHabit}
+              onEditHabit={handleStartEdit}
             />
           )}
         </div>
@@ -361,8 +437,13 @@ export function TrackerContent() {
 
       <AddHabitModal
         isOpen={isAddHabitModalOpen}
-        onClose={() => setIsAddHabitModalOpen(false)}
+        onClose={() => {
+          setIsAddHabitModalOpen(false)
+          setEditingHabit(null)
+        }}
         onAdd={handleAddHabit}
+        onEdit={handleEditHabit}
+        editingHabit={editingHabit || undefined}
       />
     </div>
   )

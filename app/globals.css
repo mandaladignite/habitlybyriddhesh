@@ -1,54 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Inter:wght@400;500&family=Playfair+Display:wght@400;600&display=swap');
+@import '../styles/themes.css';
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-:root {
-  --theme-bg: #f8fafc;
-  --theme-card: #ffffff;
-  --theme-primary: #3B82F6;
-  --theme-secondary: #10B981;
-  --theme-accent: #F59E0B;
-  --theme-danger: #EF4444;
-  --theme-text: #1e293b;
-  --theme-muted: #64748b;
-  --theme-border: #e2e8f0;
-  --theme-success: #10B981;
-  --theme-warning: #F59E0B;
-}
-
-[data-theme="discipline"] {
-  --theme-bg: #f8fafc;
-  --theme-card: #ffffff;
-  --theme-primary: #3B82F6;
-  --theme-secondary: #10B981;
-  --theme-accent: #F59E0B;
-}
-
-[data-theme="struggle"] {
-  --theme-bg: #fef2f2;
-  --theme-card: #ffffff;
-  --theme-primary: #EF4444;
-  --theme-secondary: #F59E0B;
-  --theme-accent: #F97316;
-}
-
-[data-theme="performance"] {
-  --theme-bg: #f0fdf4;
-  --theme-card: #ffffff;
-  --theme-primary: #10B981;
-  --theme-secondary: #3B82F6;
-  --theme-accent: #06B6D4;
-}
-
-[data-theme="warrior"] {
-  --theme-bg: #faf5ff;
-  --theme-card: #ffffff;
-  --theme-primary: #8B5CF6;
-  --theme-secondary: #EC4899;
-  --theme-accent: #F59E0B;
-}
 
 * {
   margin: 0;
@@ -58,8 +13,8 @@
 
 body {
   font-family: 'Inter', sans-serif;
-  color: #1e293b;
-  background-color: #f8fafc;
+  color: var(--text);
+  background-color: var(--background);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;

@@ -7,6 +7,9 @@ interface Habit {
   id: string
   name: string
   emoji: string
+  targetTime?: string
+  weeklyTarget?: number
+  monthlyTarget?: number
   entries: { date: Date; completed: boolean }[]
 }
 
@@ -15,9 +18,10 @@ interface HabitGridProps {
   selectedMonth: Date
   onToggleEntry: (habitId: string, date: Date) => void
   onDeleteHabit: (habitId: string) => void
+  onEditHabit?: (habit: Habit) => void
 }
 
-export function HabitGrid({ habits, selectedMonth, onToggleEntry, onDeleteHabit }: HabitGridProps) {
+export function HabitGrid({ habits, selectedMonth, onToggleEntry, onDeleteHabit, onEditHabit }: HabitGridProps) {
   const daysInMonth = getDaysInMonth(selectedMonth.getFullYear(), selectedMonth.getMonth())
   const startOfMonth = getStartOfMonth(selectedMonth)
   const today = new Date()
@@ -79,6 +83,7 @@ export function HabitGrid({ habits, selectedMonth, onToggleEntry, onDeleteHabit 
                 selectedMonth={selectedMonth}
                 onToggleEntry={onToggleEntry}
                 onDelete={onDeleteHabit}
+                onEdit={onEditHabit}
               />
             ))}
           </div>

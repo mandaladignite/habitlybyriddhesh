@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X } from 'lucide-react'
 
@@ -10,19 +10,52 @@ interface AddHabitModalProps {
   isOpen: boolean
   onClose: () => void
   onAdd: (name: string, emoji: string, targetTime?: string, weeklyTarget?: number, monthlyTarget?: number) => void
+  onEdit?: (id: string, name: string, emoji: string, targetTime?: string, weeklyTarget?: number, monthlyTarget?: number) => void
+  editingHabit?: {
+    id: string
+    name: string
+    emoji: string
+    targetTime?: string
+    weeklyTarget?: number
+    monthlyTarget?: number
+  }
 }
 
-export function AddHabitModal({ isOpen, onClose, onAdd }: AddHabitModalProps) {
+export function AddHabitModal({ isOpen, onClose, onAdd, onEdit, editingHabit }: AddHabitModalProps) {
   const [name, setName] = useState('')
   const [selectedEmoji, setSelectedEmoji] = useState('✨')
   const [targetTime, setTargetTime] = useState('')
   const [weeklyTarget, setWeeklyTarget] = useState(7)
   const [monthlyTarget, setMonthlyTarget] = useState(30)
 
+  // Reset form when modal opens/closes or editing habit changes
+  useEffect(() => {
+    if (isOpen) {
+      if (editingHabit) {
+        setName(editingHabit.name)
+        setSelectedEmoji(editingHabit.emoji)
+        setTargetTime(editingHabit.targetTime || '')
+        setWeeklyTarget(editingHabit.weeklyTarget || 7)
+        setMonthlyTarget(editingHabit.monthlyTarget || 30)
+      } else {
+        setName('')
+        setSelectedEmoji('✨')
+        setTargetTime('')
+        setWeeklyTarget(7)
+        setMonthlyTarget(30)
+      }
+    }
+  }, [isOpen, editingHabit])
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (name.trim()) {
-      onAdd(name.trim(), selectedEmoji, targetTime || undefined, weeklyTarget, monthlyTarget)
+      if (editingHabit && onEdit) {
+        onEdit(editingHabit.id, name.trim(), selectedEmoji, targetTime || undefined, weeklyTarget, monthlyTarget)
+      } else {
+        onAdd(name.trim(), selectedEmoji, targetTime || undefined, weeklyTarget, monthlyTarget)
+      }
+      // Reset form
       setName('')
       setSelectedEmoji('✨')
       setTargetTime('')
@@ -58,7 +91,7 @@ export function AddHabitModal({ isOpen, onClose, onAdd }: AddHabitModalProps) {
               </button>
 
               <h2 className="text-xl font-bold text-slate-800 mb-6">
-                Add New Habit
+                {editingHabit ? 'Edit Habit' : 'Add New Habit'}
               </h2>
 
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -158,7 +191,7 @@ export function AddHabitModal({ isOpen, onClose, onAdd }: AddHabitModalProps) {
                     type="submit"
                     className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all font-semibold shadow-md hover:shadow-lg"
                   >
-                    Add Habit
+                    {editingHabit ? 'Update Habit' : 'Add Habit'}
                   </button>
                 </div>
               </form>

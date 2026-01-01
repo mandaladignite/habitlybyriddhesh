@@ -109,6 +109,61 @@ export async function POST(request: Request) {
   }
 }
 
+export async function PUT(request: Request) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    await connectDB()
+
+    const { id, name, emoji, color, frequency, targetTime, weeklyTarget, monthlyTarget } = await request.json()
+
+    if (!id || !name) {
+      return NextResponse.json(
+        { error: 'Habit ID and name are required' },
+        { status: 400 }
+      )
+    }
+
+    const habit = await Habit.findOneAndUpdate(
+      {
+        _id: id,
+        userId: session.user.id,
+      },
+      {
+        name,
+        emoji: emoji || '✨',
+        color,
+        frequency: frequency || 'daily',
+        targetTime,
+        weeklyTarget: weeklyTarget || 7,
+        monthlyTarget: monthlyTarget || 30,
+      },
+      { new: true }
+    )
+
+    if (!habit) {
+      return NextResponse.json(
+        { error: 'Habit not found' },
+        { status: 404 }
+      )
+    }
+
+    return NextResponse.json({
+      ...habit.toObject(),
+      id: habit._id.toString(),
+    })
+  } catch (error) {
+    console.error('Error updating habit:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
 export async function DELETE(request: Request) {
   try {
     const session = await getServerSession(authOptions)
