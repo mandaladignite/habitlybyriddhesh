@@ -11,6 +11,9 @@ export interface IUser extends Document<Types.ObjectId> {
   updatedAt: Date
 }
 
+// Progress calculation strategies
+export type ProgressRule = 'ALL' | 'PERCENTAGE' | 'POINTS'
+
 export interface IHabit extends Document<Types.ObjectId> {
   _id: Types.ObjectId
   name: string
@@ -24,6 +27,10 @@ export interface IHabit extends Document<Types.ObjectId> {
   monthlyTarget?: number // Target completions per month
   userId: string
   archived: boolean
+  // Sub-task support
+  hasSubTasks: boolean
+  progressRule: ProgressRule
+  completionThreshold: number // For PERCENTAGE rule (default: 70)
   createdAt: Date
   updatedAt: Date
 }
